@@ -1330,9 +1330,10 @@ check_need_php()
 }
 remove_xray()
 {
-    local script_src
-    if { script_src="$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" || script_src="$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)"; } && [ -n "$script_src" ]; then
-        bash <(echo "${script_src}") remove --purge
+    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge; then
+        red    "卸载Xray失败"
+        report_bug
+        return 1
     fi
     {
         systemctl stop xray
@@ -1420,8 +1421,12 @@ remove_php()
 }
 gen_reality_key()
 {
+    local gen_params=""
+    if [ -n "$1" ]; then
+        gen_params="-i $1"
+    fi
     local lines
-    mapfile -t lines <<<"$(/usr/local/bin/xray x25519)"
+    mapfile -t lines <<<"$(/usr/local/bin/xray x25519 $gen_params)"
     if ! grep -qi private <<< "${lines[0]}" || ! grep -qi public <<< "${lines[1]}"; then
         red    "获取x25519密钥对出错"
         report_bug
@@ -2624,8 +2629,34 @@ EOF
 #安装/更新Xray
 install_update_xray()
 {
+    echo -e "\\n\\n\\n"
+    tyblue "---------------------请选择Xray版本---------------------"
+    tyblue " 1. v26.6.27 (兼容sing-box及旧版xray客户端)"
+    tyblue " 2. 最新发布版本"
+    tyblue " 3. 最新预发布版本"
+    echo
+    local install_params="--without-geodata --without-logfiles"
+    local choice
+    while true; do
+        read -p "您的选择是: " choice
+
+        case "$choice" in
+            1)
+                install_params="$install_params --version v26.6.27"
+                break
+                ;;
+            2)
+                break
+                ;;
+            3)
+                install_params="$install_params --beta"
+                break
+                ;;
+        esac
+    done
+    echo
     green "正在安装/更新Xray。。。。"
-    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install --without-geodata --without-logfiles --version v26.6.27; then
+    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install $install_params; then
         red    "安装/更新Xray失败"
         report_bug
         return 1
@@ -4324,7 +4355,24 @@ reset_reality_key()
     config_check
     tyblue "将重新生成REALITY密钥对，这将修改客户端REALITY协议的publicKey"
     ! ask_if "是否继续？(y/n)" && exit 0
-    gen_reality_key
+    local xid=""
+    while :
+    do
+        xid=""
+        while true; do
+            tyblue "-------------请输入新的私钥(43位Base64字符，为空则自动生成)-------------"
+            read -r priv_key
+            if [[ -z "$priv_key" ]]; then
+                tyblue "您未输入私钥，将自动生成新的私钥"
+                break
+            elif [[ "$priv_key" =~ ^[A-Za-z0-9_-]{43}$ ]]; then
+                tyblue "您输入的私钥是：$priv_key"
+                break
+            fi
+        done
+        ask_if "是否确定?(y/n)" && break
+    done
+    gen_reality_key $priv_key
     config_xray
     systemctl -q is-active xray && systemctl restart xray
     green "更换完成！"
@@ -4592,13 +4640,13 @@ start_menu()
             change_uid
             ;;
         22)
-            change_grpc_serviceName
+            reset_reality_key
             ;;
         23)
-            change_ws_path
+            change_grpc_serviceName
             ;;
         24)
-            reset_reality_key
+            change_ws_path
             ;;
         25)
             simplify_system
