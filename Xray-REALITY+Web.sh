@@ -95,7 +95,7 @@ using_swap_now=0
 update=0
 # 在 install_update_xray_reality_web 函数中
 in_install_update_xray_reality_web=0
-script_url="https://github.com/kirin10000/Xray-script/raw/main/Xray-REALITY+Web.sh"
+script_url="https://github.com/cody1996/Xray-script/raw/main/Xray-REALITY+Web.sh"
 
 #功能性函数：
 #定义几个颜色
@@ -147,13 +147,13 @@ version_ge()
 }
 report_bug()
 {
-    green  "欢迎进行Bug report(https://github.com/kirin10000/Xray-script/issues)，感谢您的支持"
+    green  "欢迎进行Bug report(https://github.com/cody1996/Xray-script/issues)，感谢您的支持"
     yellow "按回车键继续或者Ctrl+c退出"
     read -rs
 }
 report_bug_exit()
 {
-    green  "欢迎进行Bug report(https://github.com/kirin10000/Xray-script/issues)，感谢您的支持"
+    green  "欢迎进行Bug report(https://github.com/cody1996/Xray-script/issues)，感谢您的支持"
     exit 1
 }
 #进入工作目录
@@ -1802,7 +1802,7 @@ readProtocolConfig()
     echo
     blue   " 注："
     blue   "   1. 如不使用CDN，请选择TCP(REALITY)"
-    blue   "   2. gRPC和WebSocket支持通过CDN，关于两者的区别，详见：https://github.com/kirin10000/Xray-script#关于grpc与websocket"
+    blue   "   2. gRPC和WebSocket支持通过CDN，关于两者的区别，详见：https://github.com/cody1996/Xray-script#关于grpc与websocket"
     echo
     local choice=""
     while [[ ! "$choice" =~ ^(0|[1-9][0-9]*)$ ]] || ((choice>7))
@@ -2625,29 +2625,10 @@ EOF
 install_update_xray()
 {
     green "正在安装/更新Xray。。。。"
-    local script_src
-    if { ! script_src="$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" && ! script_src="$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)"; } || [ -z "$script_src" ]; then
-        red "获取Xray安装脚本失败！"
-        report_bug
-        return 1
-    fi
-    if ! bash <(echo "${script_src}") install -u root --without-geodata --without-logfiles --beta; then
+    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install --without-geodata --without-logfiles --version v26.6.27; then
         red    "安装/更新Xray失败"
         report_bug
         return 1
-    fi
-    if ! grep -q "# This file has been edited by Xray-REALITY-Web setup script" /etc/systemd/system/xray.service; then
-cat >> /etc/systemd/system/xray.service <<EOF
-
-# This file has been edited by Xray-REALITY-Web setup script
-[Service]
-ExecStartPre="$(type -P rm)" -rf /run/xray
-ExecStartPre="$(type -P mkdir)" /run/xray
-ExecStartPre="$(type -P chmod)" 711 /run/xray
-ExecStopPost="$(type -P rm)" -rf /run/xray
-EOF
-        systemctl daemon-reload
-        systemctl -q is-active xray && systemctl restart xray
     fi
     xray_is_installed=1
     [ $nginx_is_installed -eq 1 ] && is_installed=1 || is_installed=0
@@ -3156,7 +3137,7 @@ reset_nextcloud_host()
     while ! [[ -f "${nginx_prefix}/html/${true_domain_list[$1]}/config/config.php" ]]
     do
         yellow "域名 ${domain_list[$1]} 的nextcloud配置文件不存在，请先打开网站 https://${domain_list[$1]} 进行nextcloud初始化！"
-        yellow "如果有疑问，请前往 https://github.com/kirin10000/Xray-script/issues 进行Bug Report"
+        yellow "如果有疑问，请前往 https://github.com/cody1996/Xray-script/issues 进行Bug Report"
         tyblue "完成初始化后按回车键继续。。。"
         read -rs
         echo
@@ -4450,11 +4431,11 @@ start_menu()
     tyblue "------------------------ Xray-REALITY+Web 搭建/管理脚本 ------------------------"
     tyblue "           系统发行版 ：           ${distro}"
     tyblue "           系统版本   ：           ${system_version}"
-    tyblue "       官网：https://github.com/kirin10000/Xray-script"
+    tyblue "       官网：https://github.com/cody1996/Xray-script"
     tyblue "----------------------------------- 注意事项 -----------------------------------"
     yellow " 1. 此脚本至少需要一个解析到本服务器的域名"
     tyblue " 2. 此脚本安装时间较长，建议在安装前阅读："
-    tyblue "      https://github.com/kirin10000/Xray-script#安装时长说明"
+    tyblue "      https://github.com/cody1996/Xray-script#安装时长说明"
     green  " 3. 建议在纯净的系统上使用此脚本 (VPS控制台-重置系统)"
     tyblue "----------------------------------------------------------------------------"
     echo
