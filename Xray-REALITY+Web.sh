@@ -1330,11 +1330,7 @@ check_need_php()
 }
 remove_xray()
 {
-    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge; then
-        red    "卸载Xray失败"
-        report_bug
-        return 1
-    fi
+    bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
     {
         systemctl stop xray
         systemctl disable xray
